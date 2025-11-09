@@ -1,12 +1,14 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+require('dotenv').config({path: path.resolve(__dirname, '../../.env') });
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
 
 // Extract entities from transcript using GPT
 export async function extractEntities(transcript: string) {
