@@ -69,3 +69,8 @@ CREATE INDEX IF NOT EXISTS idx_transcripts_occurred_at ON transcripts(occurred_a
 CREATE INDEX IF NOT EXISTS idx_participants_email ON participants(email);
 CREATE INDEX IF NOT EXISTS idx_topics_transcript_id ON topics(transcript_id);
 CREATE INDEX IF NOT EXISTS idx_action_items_transcript_id ON action_items(transcript_id);
+
+-- Add summary column to transcripts table
+ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS summary TEXT;
+-- Add insights column to transcripts table
+ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS insights TEXT;

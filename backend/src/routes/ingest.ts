@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../db';
 import { IngestRequestSchema } from '../schemas';
-import { extractEntities, generateEmbedding } from '../openai.service';
+import { extractEntities, generateEmbedding,generateSummary,generateInsights} from '../openai.service';
 
 export async function ingestTranscript(req: Request, res: Response) {
   try {
@@ -24,6 +24,14 @@ export async function ingestTranscript(req: Request, res: Response) {
     console.log('🤖 Extracting entities from transcript...');
     const extracted = await extractEntities(validatedData.transcript);
 
+    // Generate insights
+    console.log('💡 Generating insights...');
+    const insights = await generateInsights(validatedData.transcript, extracted.topics, extracted.decisions);
+
+    // Generate summary
+    console.log('📝 Generating summary...');
+    const summary = await generateSummary(validatedData.transcript);
+
     // Generate embedding for semantic search
     console.log('🔢 Generating embedding...');
     const embedding = await generateEmbedding(validatedData.transcript);
@@ -37,8 +45,8 @@ export async function ingestTranscript(req: Request, res: Response) {
       // Insert transcript
       const transcriptResult = await client.query(
         `INSERT INTO transcripts 
-        (transcript_id, title, occurred_at, duration_minutes, transcript_text, platform, recording_url, sentiment) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+        (transcript_id, title, occurred_at, duration_minutes, transcript_text, platform, recording_url, sentiment,summary,insights) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9,$10) 
         RETURNING id`,
         [
           validatedData.transcript_id,
@@ -49,6 +57,8 @@ export async function ingestTranscript(req: Request, res: Response) {
           validatedData.metadata?.platform,
           validatedData.metadata?.recording_url,
           extracted.sentiment,
+          summary,
+          insights
         ]
       );
 
@@ -117,6 +127,8 @@ export async function ingestTranscript(req: Request, res: Response) {
       res.status(201).json({
         id: transcriptId,
         status: 'processed',
+        summary: summary,
+        insights: JSON.parse(insights),
         extracted: {
           topics: extracted.topics,
           action_items: extracted.action_items,

@@ -6,10 +6,11 @@ import { getTopics } from './routes/topics';
 import { getParticipantAnalytics } from './routes/participants';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { get } from 'http';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root .env file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import pool from '../db';
 
-// GET /api/transcripts - List all transcripts
 export async function getTranscripts(req: Request, res: Response) {
   try {
-    const result = await pool.query(`
-      SELECT 
+    const { start_date, end_date, participant_email, topic } = req.query;
+    
+    // Build dynamic query with filters
+    let query = `
+      SELECT DISTINCT
         t.id,
         t.transcript_id,
         t.title,
@@ -18,14 +20,57 @@ export async function getTranscripts(req: Request, res: Response) {
         COUNT(DISTINCT top.id) as topic_count
       FROM transcripts t
       LEFT JOIN transcript_participants tp ON t.id = tp.transcript_id
+      LEFT JOIN participants p ON tp.participant_id = p.id
       LEFT JOIN topics top ON t.id = top.transcript_id
+      WHERE 1=1
+    `;
+    
+    const params: any[] = [];
+    let paramCount = 1;
+    
+    // Filter by date range
+    if (start_date) {
+      query += ` AND t.occurred_at >= $${paramCount}`;
+      params.push(start_date);
+      paramCount++;
+    }
+    
+    if (end_date) {
+      query += ` AND t.occurred_at <= $${paramCount}`;
+      params.push(end_date);
+      paramCount++;
+    }
+    
+    // Filter by participant email
+    if (participant_email) {
+      query += ` AND p.email = $${paramCount}`;
+      params.push(participant_email);
+      paramCount++;
+    }
+    
+    // Filter by topic
+    if (topic) {
+      query += ` AND top.topic_name = $${paramCount}`;
+      params.push(topic);
+      paramCount++;
+    }
+    
+    query += `
       GROUP BY t.id
       ORDER BY t.occurred_at DESC
-    `);
+    `;
+    
+    const result = await pool.query(query, params);
 
     res.json({
       count: result.rows.length,
-      transcripts: result.rows
+      transcripts: result.rows,
+      filters: {
+        start_date: start_date || null,
+        end_date: end_date || null,
+        participant_email: participant_email || null,
+        topic: topic || null
+      }
     });
   } catch (error: any) {
     console.error('Error fetching transcripts:', error);
@@ -79,9 +124,20 @@ export async function getTranscriptById(req: Request, res: Response) {
       [id]
     );
 
+    let parsedInsights = null;
+    if (transcript.insights) {
+      try {
+        parsedInsights = JSON.parse(transcript.insights);
+      } catch (error) {
+        console.error('Error parsing insights:', error);
+        parsedInsights = null;
+      }
+    }
+
     // Combine all data
     res.json({
       ...transcript,
+      insights: parsedInsights,
       participants: participantsResult.rows,
       topics: topicsResult.rows.map(t => t.topic_name),
       action_items: actionItemsResult.rows,
