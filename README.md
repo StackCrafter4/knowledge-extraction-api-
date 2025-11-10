@@ -753,32 +753,3 @@ curl http://localhost:3000/api/analytics/participants
    
    # Or use the platform's dashboard
    ```
-
-### Database
-
-For production, use a managed PostgreSQL service:
-- **AWS RDS**
-- **Google Cloud SQL**
-- **Heroku Postgres**
-- **Railway PostgreSQL**
-
-Update `DATABASE_URL` in your production environment.
-
-## 📄 License
-
-ISC
-
-## 👥 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📧 Support
-
-For issues or questions, please open an issue on the repository.
-
----
-
-**Built with ❤️ using TypeScript, Next.js, and OpenAI**
